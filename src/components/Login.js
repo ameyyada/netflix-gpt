@@ -1,13 +1,102 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Header } from './Header'
+import { checkValidData } from '../utils/validate'
+import {  createUserWithEmailAndPassword , signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from '../utils/firebase';
+import { useNavigate } from 'react-router-dom';
+import {  updateProfile } from "firebase/auth";
+import { useSelector } from 'react-redux';
+
 
 const Login = () => {
+  const navigate =useNavigate()
+
 
   const[isSignInForm  , setisSignInForm]  =useState(true)
+  const[ErrorMessage , setErrorMessage]= useState(null)
+
+
+const name = useRef(null) 
+const email = useRef(null)
+const password  = useRef(null)
+
+
 
 const toggleSignInForm =()=>{
 setisSignInForm(!isSignInForm)
 }
+
+
+
+
+
+
+const handleButtonClick =()=>{
+  //console.log(email.current.value)
+  // console.log(password.current.value)
+const Message =  checkValidData(email.current.value , password.current.value)
+
+//console.log(Message)
+setErrorMessage(Message)
+if(Message) return
+
+if(!isSignInForm) {
+//signup logic
+
+createUserWithEmailAndPassword(auth, email.current.value , password.current.value)
+  .then((userCredential) => {
+    // Signed up 
+
+
+    const user = userCredential.user;
+
+    updateProfile(user, {
+  displayName: name.current.value, photoURL: "https://media.naukri.com/media/jphotov1/l244%253ALukcMTmz2woYE7u5VwgEbpk%252Fx38paMQ7g1t73KS%252B3vCF%252BeCbx3eiaAtoWSHE"
+}).then(() => {
+  // Profile updated!
+  navigate("/browse")
+  // ...
+}).catch((error) => {
+  // An error occurred
+  setErrorMessage(error.message)
+  // ...
+});
+console.log(user)
+
+
+    // ...
+  })
+  .catch((error) => {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    console.log(errorCode +"-"+errorMessage)
+    setErrorMessage(errorCode +"-"+errorMessage)
+    // ..
+  });
+}
+else {
+  signInWithEmailAndPassword(auth,  email.current.value , password.current.value)
+  .then((userCredential) => {
+    // Signed in 
+    const user = userCredential.user;
+    console.log(user)
+    navigate("/browse")
+    // ...
+  })
+  .catch((error) => {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    console.log(errorCode +"-"+errorMessage)
+     setErrorMessage(errorCode +"-"+errorMessage)
+  });
+
+
+}
+
+}
+
+
+
 
 
   return (
@@ -19,15 +108,19 @@ setisSignInForm(!isSignInForm)
    alt='logo'
     />
         </div> 
-<form className='absolute   w-3/12  p-12 bg-black mx-auto right-0 left-0  my-36  text-white  bg-opacity-80'>
+<form   onSubmit={(e)=> e.preventDefault()} className='absolute   w-3/12  p-12 bg-black mx-auto right-0 left-0  my-36  text-white  bg-opacity-80'>
     <h1   className='font-bold  text-3xl py-4'>  {isSignInForm ? "Sign In" : "Sign Up" }  </h1>
 
 {
-  !isSignInForm && <input  className='w-full   p-4 my-4 bg-gray-700'  type='text'  placeholder='Full Name' />
+  !isSignInForm && <input   ref={name}  className='w-full   p-4 my-4 bg-gray-700'  type='text'  placeholder='Full Name' />
 }
-    <input  className='w-full   p-4 my-4 bg-gray-700'  type='text' placeholder='Email Address' />
-    <input  className='w-full   p-4 my-4 bg-gray-700'  type='password'  placeholder='Password'   />
-    <button className='w-full bg-red-700   p-4   my-6  rounded-lg'>{isSignInForm ? "Sign In" : "Sign Up"}</button>
+
+    <input   ref={email} className='w-full   p-4 my-4 bg-gray-700'  type='text' placeholder='Email Address' />
+    <input     ref={password} className='w-full   p-4 my-4 bg-gray-700'  type='password'  placeholder='Password'   />
+
+    <p  className=  ' font-bold text-lg text-red-500'>{ErrorMessage }</p>
+
+    <button className='w-full bg-red-700   p-4   my-6  rounded-lg'   onClick={handleButtonClick} >{isSignInForm ? "Sign In" : "Sign Up"}</button>
     <p className='py-4'  onClick={toggleSignInForm}>
       {
         isSignInForm ?  "New to Netflix ? Sign Up Now" : "Already Registered ? Sign In Now "
