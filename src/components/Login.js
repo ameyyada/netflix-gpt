@@ -3,22 +3,28 @@ import { Header } from './Header'
 import { checkValidData } from '../utils/validate'
 import {  createUserWithEmailAndPassword , signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from '../utils/firebase';
-import { useNavigate } from 'react-router-dom';
+
 import {  updateProfile } from "firebase/auth";
-import { useSelector } from 'react-redux';
+import { useDispatch,  } from 'react-redux';
+import { addUser } from '../utils/userSlice';
+import { useNavigate } from 'react-router-dom';
+import { USER_AVATAR } from '../utils/constants';
 
 
 const Login = () => {
-  const navigate =useNavigate()
+  
+  const dispatch =useDispatch()
+  const navigate = useNavigate()
 
 
   const[isSignInForm  , setisSignInForm]  =useState(true)
   const[ErrorMessage , setErrorMessage]= useState(null)
+  const [nameValue, setNameValue] = useState("")
+  const [emailValue, setEmailValue] = useState("")
+  const [passwordValue, setPasswordValue] = useState("")
 
 
-const name = useRef(null) 
-const email = useRef(null)
-const password  = useRef(null)
+
 
 
 
@@ -32,66 +38,58 @@ setisSignInForm(!isSignInForm)
 
 
 const handleButtonClick =()=>{
-  //console.log(email.current.value)
-  // console.log(password.current.value)
-const Message =  checkValidData(email.current.value , password.current.value)
+  const Message = checkValidData(emailValue, passwordValue);
+  setErrorMessage(Message);
+  if (Message) return;
 
-//console.log(Message)
-setErrorMessage(Message)
-if(Message) return
-
-if(!isSignInForm) {
-//signup logic
-
-createUserWithEmailAndPassword(auth, email.current.value , password.current.value)
-  .then((userCredential) => {
-    // Signed up 
-
-
-    const user = userCredential.user;
-
-    updateProfile(user, {
-  displayName: name.current.value, photoURL: "https://media.naukri.com/media/jphotov1/l244%253ALukcMTmz2woYE7u5VwgEbpk%252Fx38paMQ7g1t73KS%252B3vCF%252BeCbx3eiaAtoWSHE"
-}).then(() => {
+  if (!isSignInForm) {
+    // Signup logic
+    createUserWithEmailAndPassword(auth, emailValue, passwordValue)
+      .then( async (userCredential) => {
+        // Signed up
+        const user = userCredential.user;
+   await updateProfile(user, {
+  displayName: nameValue, photoURL: USER_AVATAR
+}).then( () => {
+    const { uid, email, displayName, photoURL } = auth.currentUser;
+              dispatch(
+                addUser({
+                  uid: uid,
+                  email: email,
+                  displayName: displayName,
+                  photoURL: photoURL,
+                })
+              );
   // Profile updated!
-  navigate("/browse")
   // ...
-}).catch((error) => {
+})
+.catch((error) => {
   // An error occurred
-  setErrorMessage(error.message)
+   setErrorMessage(error.message);
   // ...
 });
-console.log(user)
 
-
-    // ...
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    console.log(errorCode +"-"+errorMessage)
-    setErrorMessage(errorCode +"-"+errorMessage)
-    // ..
-  });
-}
-else {
-  signInWithEmailAndPassword(auth,  email.current.value , password.current.value)
-  .then((userCredential) => {
-    // Signed in 
-    const user = userCredential.user;
-    console.log(user)
-    navigate("/browse")
-    // ...
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    console.log(errorCode +"-"+errorMessage)
-     setErrorMessage(errorCode +"-"+errorMessage)
-  });
-
-
-}
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        setErrorMessage(errorCode + "-" + errorMessage);
+      });
+  } else {
+    signInWithEmailAndPassword(auth, emailValue, passwordValue)
+      .then((userCredential) => {
+        // Signed in
+        const user = userCredential.user;
+       // console.log(user);
+        
+        // ...
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        setErrorMessage(errorCode + "-" + errorMessage);
+      });
+  }
 
 }
 
@@ -112,11 +110,11 @@ else {
     <h1   className='font-bold  text-3xl py-4'>  {isSignInForm ? "Sign In" : "Sign Up" }  </h1>
 
 {
-  !isSignInForm && <input   ref={name}  className='w-full   p-4 my-4 bg-gray-700'  type='text'  placeholder='Full Name' />
+  !isSignInForm && <input   value={nameValue}  onChange={(e)=>setNameValue(e.target.value)} className='w-full   p-4 my-4 bg-gray-700'  type='text'  placeholder='Full Name' />
 }
 
-    <input   ref={email} className='w-full   p-4 my-4 bg-gray-700'  type='text' placeholder='Email Address' />
-    <input     ref={password} className='w-full   p-4 my-4 bg-gray-700'  type='password'  placeholder='Password'   />
+    <input  value={emailValue} onChange={(e)=>setEmailValue(e.target.value)} className='w-full   p-4 my-4 bg-gray-700'  type='text' placeholder='Email Address' />
+    <input     value={passwordValue} onChange={(e)=>setPasswordValue(e.target.value)} className='w-full   p-4 my-4 bg-gray-700'  type='password'  placeholder='Password'   />
 
     <p  className=  ' font-bold text-lg text-red-500'>{ErrorMessage }</p>
 
