@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+
+/* Custom scrollbar styles */
+.scrollbar-black::-webkit-scrollbar {
+  width: 10px;  /* Adjust width as needed */
+  height: 10px;  /* Adjust height if needed */
+}
+
+.scrollbar-black::-webkit-scrollbar-thumb {
+  background-color: #000 !important;  /* Ensure it's black */
+  border-radius: 4px;
+}
+
+.scrollbar-black::-webkit-scrollbar-track {
+  background-color: #111 !important;  /* Darker background for track */
+}
+
+/* For Firefox */
+.scrollbar-black {
+  scrollbar-width: thin;
+  scrollbar-color: #000 #111;  /* Black thumb and dark track */
+}
